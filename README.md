@@ -1,6 +1,6 @@
-# Triel Pro Co Documentation
+# Triel Pro Co
 
 ### Select your language:
 
-- English
-- Русский
+- [English](docs/en/readme.md)
+- [Русский](docs/ru/readme.md)
