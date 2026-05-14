@@ -1,2 +1,6 @@
-# triel-pro-co-docs
-Triel Pro Co documentation
+# Triel Pro Co Documentation
+
+### Select your language:
+
+- English
+- Русский
