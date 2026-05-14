@@ -2,3 +2,4 @@
 
 - [Документация по API](api.md)
 - [Документация по Базе данных](database.md)
+- [Редактор этикеток](label_template_editor.md)
