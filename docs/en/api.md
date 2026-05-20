@@ -23,6 +23,15 @@
     - [Create Category](#create-category)
     - [Update Category](#update-category)
     - [Delete Category](#delete-category)
+  - [Unique Codes](#unique-codes)
+    - [Upload Unique Codes (JSON)](#upload-unique-codes-json)
+    - [Upload Unique Codes (File)](#upload-unique-codes-file)
+    - [List Unique Codes](#list-unique-codes)
+    - [Download Unique Codes (CSV)](#download-unique-codes-csv)
+    - [Unique Code Statistics](#unique-code-statistics)
+    - [Delete Unique Codes](#delete-unique-codes)
+    - [List Printed Unique Codes](#list-printed-unique-codes)
+    - [Download Printed Unique Codes (CSV)](#download-printed-unique-codes-csv)
 - [Label & Template Management](#label--template-management)
   - [Label Templates](#label-templates)
     - [List Templates](#list-templates)
@@ -432,6 +441,104 @@ Updates an existing category. Content type: `multipart/form-data`.
 #### Delete Category
 `DELETE /api/v1/categories/{id}`  
 Deletes a category.
+
+### Unique Codes
+
+#### Upload Unique Codes (JSON)
+`POST /api/v1/categories/{categoryId}/unique-codes/upload/json`  
+Uploads a list of unique codes in JSON format.
+
+**Request Body**:
+```json
+["CODE1", "CODE2", "CODE3"]
+```
+
+**Response**:
+```json
+{
+  "uploaded_count": 3,
+  "ignored_count": 0
+}
+```
+
+#### Upload Unique Codes (File)
+`POST /api/v1/categories/{categoryId}/unique-codes/upload/file`  
+Uploads unique codes from a file. Content type: `multipart/form-data`.
+
+**Parameters**:
+- `file` (file): File containing unique codes (one per line).
+
+**Response**:
+```json
+{
+  "uploaded_count": 100,
+  "ignored_count": 2
+}
+```
+
+#### List Unique Codes
+`GET /api/v1/categories/{categoryId}/unique-codes`  
+Returns a list of all available unique codes for a specific category.
+
+**Response**:
+```json
+["CODE1", "CODE2", "CODE3"]
+```
+
+#### Download Unique Codes (CSV)
+`GET /api/v1/categories/{categoryId}/unique-codes/download/csv`  
+Downloads available unique codes as a CSV file.
+
+**Response**:
+CSV file download.
+
+
+#### Unique Code Statistics
+`GET /api/v1/categories/{categoryId}/unique-codes/stats`  
+Returns statistics for unique codes of a specific category.
+
+**Response**:
+```json
+{
+  "totalCount": 1000,
+  "reservedCount": 50,
+  "printedCount": 25000
+}
+```
+
+#### Delete Unique Codes
+`DELETE /api/v1/categories/{categoryId}/unique-codes`  
+Deletes all available unique codes for a specific category.
+
+**Response**:
+```json
+{
+  "deletedCount": 100
+}
+```
+
+#### List Printed Unique Codes
+`GET /api/v1/categories/{categoryId}/unique-codes/printed`  
+Returns a paginated list of printed unique codes.
+
+**Query Parameters**:
+- `startDate` (ISO Date Time): Optional start date filter.
+- `endDate` (ISO Date Time): Optional end date filter.
+- `page`, `size`, `sort`: Pagination parameters.
+
+**Response**:
+Standard Spring Data Page object containing `PrintedUniqueCodeDto` items.
+
+#### Download Printed Unique Codes (CSV)
+`GET /api/v1/categories/{categoryId}/unique-codes/printed/download/csv`  
+Downloads printed unique codes as a CSV file.
+
+**Query Parameters**:
+- `startDate` (ISO Date Time): Optional start date filter.
+- `endDate` (ISO Date Time): Optional end date filter.
+
+**Response**:
+CSV file download.
 
 ---
 
