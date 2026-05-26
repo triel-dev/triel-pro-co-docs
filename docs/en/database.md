@@ -88,6 +88,31 @@ Current state of a counter for a specific machine.
 - `machine_id`: Identifier of the machine using this counter.
 - `value`: Current counter value.
 
+### unique_code
+Pool of unique codes (e.g., DataMatrix) uploaded to the system for future printing.
+- `id`: Unique identifier (UUID String).
+- `category_id`: Reference to the `category`.
+- `code`: The code value itself.
+- `created_at`: Timestamp when the code was uploaded.
+- `created_by`: User who uploaded the code.
+- `reserved`: Flag indicating if the code is reserved for printing.
+- `reserved_by`: Identifier of the process or machine that reserved the code.
+- `reserved_at`: Reservation timestamp.
+- `parts`: JSONB field containing parsed parts of the code (GTIN, serial number, etc.).
+
+### printed_unique_code
+Registry of codes that have actually been printed on products.
+- `id`: Unique identifier.
+- `code`: The code value.
+- `category_id`: Reference to the `category`.
+- `external_product_id`: Reference to the produced item (ID from `final_product`).
+- `machine_id`: ID of the machine that performed printing.
+- `validated`: Flag indicating if the code was successfully verified by a scanner after printing.
+- `source_code_deleted`: Flag indicating if the original code was removed from the `unique_code` table after use.
+- `created_at`, `created_by`: Audit timestamps and author.
+- `reserved`, `reserved_by`, `reserved_at`: Reservation details during printing.
+- `printed_at`: Timestamp of actual printing.
+
 ### print_task_log
 Execution logs for print operations.
 - `id`: Unique identifier (Long).
@@ -168,4 +193,7 @@ Registry of hardware instances and their status.
     - `product_pallet` (Contains packs or products)
     - `product_pack` (Contains products, belongs to a pallet)
     - `final_product` (Leaf level, links to batch, pack, and pallet)
+- **Unique Codes**:
+    - `unique_code` stores a pool of available codes for categories.
+    - `printed_unique_code` links a used code to a specific item (`final_product`).
 - **Counters**: `counter_value` tracks the state of a `counter` per machine.
