@@ -27,9 +27,11 @@
     - [Upload Unique Codes (JSON)](#upload-unique-codes-json)
     - [Upload Unique Codes (File)](#upload-unique-codes-file)
     - [List Unique Codes](#list-unique-codes)
+    - [Reserve Unique Codes](#reserve-unique-codes)
     - [Download Unique Codes (CSV)](#download-unique-codes-csv)
     - [Unique Code Statistics](#unique-code-statistics)
     - [Delete Unique Codes](#delete-unique-codes)
+    - [Upsert Printed Unique Codes](#upsert-printed-unique-codes)
     - [List Printed Unique Codes](#list-printed-unique-codes)
     - [Download Printed Unique Codes (CSV)](#download-printed-unique-codes-csv)
 - [Label & Template Management](#label--template-management)
@@ -478,11 +480,51 @@ Uploads unique codes from a file. Content type: `multipart/form-data`.
 
 #### List Unique Codes
 `GET /api/v1/categories/{categoryId}/unique-codes`  
-Returns a list of all available unique codes for a specific category.
+Returns a paginated list of all available unique codes for a specific category.
+
+**Query Parameters**:
+- `page`, `size`: Pagination parameters.
 
 **Response**:
 ```json
-["CODE1", "CODE2", "CODE3"]
+{
+  "content": [
+    {
+      "id": "code_1",
+      "categoryId": "cat_1",
+      "code": "010460...21...",
+      "parts": {
+        "01": "0460...",
+        "21": "..."
+      }
+    }
+  ],
+  "pageable": {
+    "sort": {
+      "sorted": false,
+      "unsorted": true,
+      "empty": true
+    },
+    "offset": 0,
+    "pageNumber": 0,
+    "pageSize": 20,
+    "paged": true,
+    "unpaged": false
+  },
+  "totalPages": 1,
+  "totalElements": 1,
+  "last": true,
+  "size": 20,
+  "number": 0,
+  "sort": {
+    "sorted": false,
+    "unsorted": true,
+    "empty": true
+  },
+  "numberOfElements": 1,
+  "first": true,
+  "empty": false
+}
 ```
 
 #### Download Unique Codes (CSV)
@@ -516,6 +558,28 @@ Deletes all available unique codes for a specific category.
   "deletedCount": 100
 }
 ```
+
+#### Upsert Printed Unique Codes
+`POST /api/v1/categories/{categoryId}/printed/upsert`  
+Updates or inserts printed unique codes.
+
+**Request Body**:
+A list of `PrintedUniqueCodeDto` objects.
+```json
+[
+  {
+    "id": "code-id-1",
+    "code": "010460...21...",
+    "categoryId": "cat_1",
+    "machineId": "MACHINE-01",
+    "printedAt": "2023-10-27T10:00:00",
+    "validated": true
+  }
+]
+```
+
+**Response**:
+200 OK
 
 #### List Printed Unique Codes
 `GET /api/v1/categories/{categoryId}/unique-codes/printed`  
