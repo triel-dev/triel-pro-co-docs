@@ -6,7 +6,7 @@ Database engine: `PostgreSQL`
 
 ## Database Diagram
 
-![Database Diagram](../db_diagram.jpg)
+![Database Diagram](../images/db_diagram.jpg)
 
 ## Core Entities
 
