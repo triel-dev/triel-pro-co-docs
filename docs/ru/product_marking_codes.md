@@ -79,8 +79,6 @@
 
 Для проверки генерации бар-кода GS1 DataMatrix можно использовать приложения для мобильных устройств, например `QRBot`.
 
-<img src="../images/admin/ru/unique_codes/scan2.PNG" width="400px" />
-
-[//]: # (![Скан кода 2]&#40;../images/admin/ru/unique_codes/scan2.PNG =200x200&#41;)
-![Скан кода 1](../images/admin/ru/unique_codes/scan1.PNG)
+<img src="../images/admin/ru/unique_codes/scan2.PNG" width="500px" />
+<img src="../images/admin/ru/unique_codes/scan1.PNG" width="500px" />
 
