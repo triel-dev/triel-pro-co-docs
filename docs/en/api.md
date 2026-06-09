@@ -1,4 +1,4 @@
-# Triel Pro Co API Documentation
+# Triel Pro Control API Documentation
 
 - [Authentication](#authentication)
   - [Obtain Access Token](#obtain-access-token)

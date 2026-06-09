@@ -1,6 +1,6 @@
-# Triel Pro Co Database Documentation
+# Triel Pro Control Database Documentation
 
-This document describes the database schema for the Triel Pro Co system. 
+This document describes the database schema for the Triel Pro Control system. 
 
 Database engine: `PostgreSQL`
 

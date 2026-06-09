@@ -1,4 +1,4 @@
-# Triel Pro Co
+# Triel Pro Control
 
 ### Select your language:
 
