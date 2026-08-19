@@ -1,4 +1,4 @@
-# Triel Pro Control API Documentation
+# Triel Pro Co API Documentation
 
 - [Authentication](#authentication)
   - [Obtain Access Token](#obtain-access-token)
@@ -34,6 +34,7 @@
     - [Upsert Printed Unique Codes](#upsert-printed-unique-codes)
     - [List Printed Unique Codes](#list-printed-unique-codes)
     - [Download Printed Unique Codes (CSV)](#download-printed-unique-codes-csv)
+    - [Get Unique Code Weights](#get-unique-code-weights)
 - [Label & Template Management](#label--template-management)
   - [Label Templates](#label-templates)
     - [List Templates](#list-templates)
@@ -356,6 +357,9 @@ Returns all categories belonging to a specific set.
     "tare_weight": 50,
     "pack_tare_weight": 200,
     "pallet_tare_weight": 5000,
+    "ignore_product_out_of_weight_range": true,
+    "product_min_weight": 900,
+    "product_max_weight": 1100,
     "has_image": true,
     "image_url": "/api/v1/categories/cat_1/image"
   }
@@ -380,6 +384,9 @@ Returns details for a specific category.
   "tare_weight": 50,
   "pack_tare_weight": 200,
   "pallet_tare_weight": 5000,
+  "ignore_product_out_of_weight_range": true,
+  "product_min_weight": 900,
+  "product_max_weight": 1100,
   "has_image": true,
   "image_url": "/api/v1/categories/cat_1/image"
 }
@@ -396,6 +403,9 @@ Creates a new category within a set. Content type: `multipart/form-data`.
 - `tareWeight` (int): Weight of the single product container.
 - `packTareWeight` (int): Weight of the pack container.
 - `palletTareWeight` (int): Weight of the pallet container.
+- `ignoreProductOutOfWeightRange` (boolean): Enforce the product net weight range on the applicator line.
+- `productMinWeight` (int): Minimum allowed product net weight, grams.
+- `productMaxWeight` (int): Maximum allowed product net weight, grams.
 - `image` (file): Optional image file.
 
 **Response**:
@@ -412,6 +422,9 @@ Creates a new category within a set. Content type: `multipart/form-data`.
   "tare_weight": 50,
   "pack_tare_weight": 200,
   "pallet_tare_weight": 5000,
+  "ignore_product_out_of_weight_range": true,
+  "product_min_weight": 900,
+  "product_max_weight": 1100,
   "has_image": true,
   "image_url": "/api/v1/categories/cat_1/image"
 }
@@ -435,6 +448,9 @@ Updates an existing category. Content type: `multipart/form-data`.
   "tare_weight": 55,
   "pack_tare_weight": 210,
   "pallet_tare_weight": 5100,
+  "ignore_product_out_of_weight_range": true,
+  "product_min_weight": 950,
+  "product_max_weight": 1150,
   "has_image": true,
   "image_url": "/api/v1/categories/cat_1/image"
 }
@@ -603,6 +619,41 @@ Downloads printed unique codes as a CSV file.
 
 **Response**:
 CSV file download.
+
+#### Get Unique Code Weights
+`POST /api/v1/categories/{categoryId}/unique-codes/weight`  
+Resolves product IDs, net weights, and tare weights for a given list of unique marking codes.  Unfound codes return null attributes.
+
+**Request Body**:
+```json
+{
+  "codes": [
+    "010460123456789021ABC123",
+    "010460123456789021XYZ999"
+  ]
+}
+```
+
+**Response**:
+```json
+{
+  "size": 2,
+  "code_weight": [
+    {
+      "code": "010460123456789021ABC123",
+      "product_id": 213,
+      "net_weight": 100,
+      "tare_weight": 20
+    },
+    {
+      "code": "010460123456789021XYZ999",
+      "product_id": null,
+      "net_weight": null,
+      "tare_weight": null
+    }
+  ]
+}
+```
 
 ---
 
@@ -1060,9 +1111,12 @@ Returns all available placeholders (keys) that can be used in templates.
 
 Manage production batches. A batch tracks the production of a specific product over time, recording counts and weights.
 
+**Several batches may be active at the same time** (one per production line). In exchange, `name` and `external_id` are globally unique across all batches, closed ones included, and both are required when opening a batch.
+
 ### List Batches
 `GET /api/v1/product-batches`  
-Returns a list of all product batches.
+Returns product batches, newest first.
+Query Parameters: `active` (optional) — `true` returns only active batches (oldest first), `false` only closed ones, omitted returns all batches.
 
 **Response**:
 ```json
@@ -1084,9 +1138,55 @@ Returns a list of all product batches.
 ]
 ```
 
-### Get Active Batch
+### Get Batch
+`GET /api/v1/product-batches/{id}`  
+Returns a single batch.
+
+**Errors**: `404` when the batch does not exist.
+
+**Response**:
+```json
+{
+  "id": 1,
+  "name": "Batch 2023-01",
+  "external_id": "EXT-B-01",
+  "start": "2023-01-01T08:00:00",
+  "end": "2023-01-01T17:00:00",
+  "active": false,
+  "products_count": 500,
+  "products_net_weight": 250000,
+  "products_gross_weight": 275000,
+  "products_tare_weight": 25000,
+  "created_at": "2023-01-01T08:00:00",
+  "updated_at": "2023-01-01T17:00:00"
+}
+```
+
+### Batch Report by Category
+`GET /api/v1/product-batches/{id}/categories`  
+Returns the products of the batch aggregated by category, ordered by category name. Weights are in grams. Categories without products in the batch are not reported; products whose category has been deleted are grouped into a single row with a `null` `category_name` and `category_external_id`.
+
+**Errors**: `404` when the batch does not exist.
+
+**Response**:
+```json
+[
+  {
+    "category_id": "govyadina",
+    "category_name": "Говядина",
+    "category_external_id": "EXT-C-01",
+    "products_count": 300,
+    "products_net_weight": 150000,
+    "products_gross_weight": 165000
+  }
+]
+```
+
+### Get Active Batch (deprecated)
 `GET /api/v1/product-batches/active`  
-Returns details of the currently active batch.
+Returns the **most recently started** active batch. Responds `404` when no batch is active.
+
+_Deprecated_: use `GET /api/v1/product-batches?active=true` instead. This endpoint is kept for applicator panels that do not yet support batch selection — they keep their last known batch on anything but a `404`, so it must not be removed until every panel is updated.
 
 **Response**:
 ```json
@@ -1103,8 +1203,10 @@ Returns details of the currently active batch.
 
 ### Open Batch
 `POST /api/v1/product-batches/open`  
-Opens a new product batch.
-Query Parameters: `name` (optional), `externalId` (optional).
+Opens a new product batch. Existing active batches are left untouched.
+Query Parameters: `name`, `externalId`. Both are trimmed and must be non-blank and unused.
+
+**Errors** (all `400 Bad Request`): blank `name`; blank `externalId`; `name` already used by another batch; `externalId` already used by another batch.
 
 **Response**:
 ```json
@@ -1120,13 +1222,23 @@ Query Parameters: `name` (optional), `externalId` (optional).
 ```
 
 ### Close Batch
+`POST /api/v1/product-batches/{id}/close`  
+Closes the given batch: recalculates its statistics, sets `end`, and generates its reports. Returns the closed batch.
+
+**Errors**: `404` when the batch does not exist; `400` when the batch is already closed.
+
+### Close Latest Active Batch (deprecated)
 `POST /api/v1/product-batches/close`  
-Closes the currently active batch.
+Closes the **most recently started** active batch and returns it. Responds `404` when no batch is active.
+
+_Deprecated_: use `POST /api/v1/product-batches/{id}/close` instead. Kept for admin UI versions deployed independently of the server.
 
 ### Batch Report
 `GET /api/v1/product-batches/{id}/report`  
-Generates a production report for the batch.
-Query Parameters: `type` (e.g., `PDF`, `EXCEL`).
+Returns a generated CSV report for the batch.
+Query Parameters: `type` — `BATCH` for the batch summary, `PRODUCT` for the per-product report.
+
+**Errors**: `400` when the reports have not been generated yet (the batch is still open); `404` when the batch or the report file does not exist.
 
 **Response**:
 Binary report file.
@@ -1417,3 +1529,212 @@ Renders a barcode as a Base64 encoded string based on provided properties.
 ```
 
 ---
+
+---
+
+## Data Export
+
+Export production data from configured source tables to external databases (PostgreSQL, MySQL, MS SQL Server, Oracle) on a schedule. The set of exportable source tables (or views) is defined by the `export.tables` configuration property; each must have an `id` column used as the watermark. An export task reads rows with `id` greater than the task's watermark (`last_exported_id`) and inserts them into the target table, so each run only transfers new records.
+
+All data export endpoints require the `ADMIN` role.
+
+### List Exportable Tables
+`GET /api/v1/export-tables`  
+Returns the names of the source tables available for export, as configured in `export.tables`.
+
+**Response**:
+```json
+["final_product", "product_pack", "product_batch", "product_pallet"]
+```
+
+### List Source Table Columns
+`GET /api/v1/export-tables/{table}/columns`  
+Returns the columns of an exportable source table with their data types, read from the local database via JDBC metadata. The `table` must be one of the names returned by `GET /api/v1/export-tables`. Use this to build column mappings.
+
+**Response**:
+```json
+[
+  {"name": "id", "type": "int8", "category": "NUMERIC"},
+  {"name": "net_weight", "type": "int4", "category": "NUMERIC"},
+  {"name": "created_at", "type": "timestamp", "category": "DATETIME"}
+]
+```
+
+`category` is one of `NUMERIC`, `TEXT`, `BOOLEAN`, `DATETIME`, `BINARY`, `OTHER` — a broad grouping of the SQL type for basic type-compatibility checks when mapping columns.
+
+### Export Connections
+
+#### List Connections
+`GET /api/v1/export-connections`  
+Returns all configured target database connections. Passwords are never returned.
+
+#### Get Connection
+`GET /api/v1/export-connections/{id}`
+
+#### Create Connection
+`POST /api/v1/export-connections`
+
+**Request Body**:
+```json
+{
+  "name": "warehouse mysql",
+  "db_type": "MYSQL",
+  "host": "192.168.1.10",
+  "port": 3306,
+  "database_name": "warehouse",
+  "username": "export",
+  "password": "secret",
+  "properties": "useSSL=false"
+}
+```
+
+`db_type` is one of `POSTGRESQL`, `MYSQL`, `MSSQL` (MS SQL Server, including Express editions), `ORACLE`. For `ORACLE`, `database_name` is the service name (`jdbc:oracle:thin:@//host:port/service`). `properties` is an optional string of extra JDBC parameters appended to the connection URL.
+
+The connection is verified against the target database before saving: the request fails with `400` if the target is unreachable or the credentials are wrong.
+
+**Response**:
+```json
+{
+  "id": "a1b2c3d4-...",
+  "name": "warehouse mysql",
+  "db_type": "MYSQL",
+  "host": "192.168.1.10",
+  "port": 3306,
+  "database_name": "warehouse",
+  "username": "export",
+  "properties": "useSSL=false",
+  "created_at": "2026-06-11T10:00:00"
+}
+```
+
+#### Update Connection
+`PUT /api/v1/export-connections/{id}`  
+Same body as create. A blank or missing `password` keeps the stored one. Like create, the updated connection is verified against the target database before saving.
+
+#### Delete Connection
+`DELETE /api/v1/export-connections/{id}`  
+Fails with `400` if the connection is still used by export tasks.
+
+#### Test Connection
+`POST /api/v1/export-connections/{id}/test`  
+Opens a connection to the target database and validates it.
+
+**Response**:
+```json
+{
+  "success": false,
+  "message": "Failed to connect to 'warehouse mysql': Connection refused"
+}
+```
+
+#### Target Tables
+`GET /api/v1/export-connections/{id}/tables`  
+Reads the tables of the target database with their columns via JDBC metadata. Limited to the connection's current catalog and schema (e.g. `public` for PostgreSQL, `dbo` for MSSQL, the user's schema for Oracle). Used by the UI to offer target table and target column selection when building an export task.
+
+**Response**:
+```json
+[
+  {
+    "name": "products",
+    "columns": [
+      {"name": "id", "type": "int8", "category": "NUMERIC"},
+      {"name": "weight", "type": "numeric", "category": "NUMERIC"}
+    ]
+  },
+  {"name": "orders", "columns": [{"name": "id", "type": "int8", "category": "NUMERIC"}]}
+]
+```
+
+#### Target Table Columns
+`GET /api/v1/export-connections/{id}/tables/{table}/columns`  
+Reads the column names of a table in the target database (the table name may be schema-qualified, e.g. `dbo.products`). Useful for building column mappings in the UI.
+
+**Response**:
+```json
+["id", "weight", "exported_at"]
+```
+
+### Export Tasks
+
+#### List Tasks
+`GET /api/v1/export-tasks`
+
+#### Get Task
+`GET /api/v1/export-tasks/{id}`
+
+#### Create Task
+`POST /api/v1/export-tasks`
+
+**Request Body**:
+```json
+{
+  "name": "final products to warehouse",
+  "connection_id": "a1b2c3d4-...",
+  "source_table": "final_product",
+  "target_table": "products",
+  "column_mappings": [
+    { "source": "id", "target": "id" },
+    { "source": "net_weight", "target": "weight" },
+    { "source": "created_at", "target": "produced_at" }
+  ],
+  "cron_expression": "0 0/15 * * * *",
+  "enabled": true
+}
+```
+
+- `source_table`: one of the tables returned by `GET /api/v1/export-tables`. Must have an `id` column.
+- `column_mappings`: each `source` must be a column of the source table (validated against the live schema); `target` is the column in the target table. A source column and a target column may each appear in at most one mapping.
+- `cron_expression`: Spring 6-field cron (`second minute hour day month weekday`). Triggers fire in the server timezone (`server.timezone`). Optional: `null` or blank means the task is manual-only and never runs on a schedule — it can still be triggered via the run endpoint.
+- `enabled`: optional, defaults to `true`. Disabled tasks are not scheduled.
+
+**File targets** (the connection's `target_type` is `FILE`): `target_table` is not used, the `target` of each mapping is the column header, and the following fields apply instead:
+
+- `delimiter`: required, one of `COMMA`, `PIPE`, `TAB`.
+- `file_mask`: optional file name prefix; the file name is the mask followed by a `yyMMddHHmmss` timestamp.
+- `file_extension`: optional, one of `TXT`, `CSV`, `PSV`, `TSV`. Defaults to the delimiter's extension (`CSV`, `PSV`, `TSV` respectively).
+- `start_header`, `end_header`: optional markers written as the first and last cell of the header row. They mark where the header starts and ends and have no data column of their own, so data rows are not padded for them. Neither may contain the delimiter or a line break.
+- `header_in_each_row`: optional, defaults to `false`. When `true`, the header row is repeated before every data row.
+
+The last three fields apply to the `TXT` extension only and are ignored for the CSV-family extensions. For example, with `PIPE`, `TXT`, `start_header` `H_S`, `end_header` `H_E`, headers `H1`, `H2`, `H3` and `header_in_each_row` enabled, the exported file is:
+
+```text
+H_S|H1|H2|H3|H_E
+1|2|3
+H_S|H1|H2|H3|H_E
+4|5|6
+```
+
+**Response**: the created task, including `last_exported_id` (the export watermark, starts at `0`).
+
+#### Update Task
+`PUT /api/v1/export-tasks/{id}`  
+Same body as create. Changing the source table resets the export watermark to `0`.
+
+#### Delete Task
+`DELETE /api/v1/export-tasks/{id}`  
+Removes the task from the schedule and deletes its run logs.
+
+#### Run Task Now
+`POST /api/v1/export-tasks/{id}/run`  
+Triggers an asynchronous run of the task outside of its schedule. If the task is already running, the run is skipped.
+
+#### Task Run Logs
+`GET /api/v1/export-tasks/{id}/logs`  
+Returns the latest 100 runs of the task, newest first.
+
+**Response**:
+```json
+[
+  {
+    "id": 12,
+    "task_id": "t1u2v3...",
+    "status": "SUCCESS",
+    "started_at": "2026-06-11T10:15:00",
+    "finished_at": "2026-06-11T10:15:02",
+    "rows_exported": 250,
+    "from_id": 1000,
+    "to_id": 1250,
+    "error_message": null
+  }
+]
+```
